@@ -7,6 +7,39 @@
 //Parameters: None
 //Returns: None
 //Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
+// Function to calculate the pairwise acceleration matrix
+void constructAccelerationMatrix() {
+    // Allocate memory for the acceleration matrix
+    vector3* accels = (vector3*)malloc(sizeof(vector3) * NUMENTITIES * NUMENTITIES);
+
+    // Iterate through each pair of objects to compute accelerations
+    for (int i = 0; i < NUMENTITIES; ++i) {
+        for (int j = 0; j < NUMENTITIES; ++j) {
+            if (i == j) {
+                // Diagonal elements have zero acceleration (object doesn't accelerate itself)
+                FILL_VECTOR(accels[i * NUMENTITIES + j], 0, 0, 0);
+            } else {
+                // Calculate distance between objects i and j
+                vector3 distance;
+                for (int k = 0; k < 3; ++k) {
+                    distance[k] = hPos[i][k] - hPos[j][k];
+                }
+                double magnitude_sq = distance[0] * distance[0] + distance[1] * distance[1] + distance[2] * distance[2];
+                double magnitude = sqrt(magnitude_sq);
+
+                // Calculate gravitational force
+                double accelmag = -1 * GRAV_CONSTANT * mass[j] / magnitude_sq;
+
+                // Calculate acceleration components
+                double ax = accelmag * distance[0] / magnitude;
+                double ay = accelmag * distance[1] / magnitude;
+                double az = accelmag * distance[2] / magnitude;
+
+                // Store the acceleration in the matrix
+                FILL_VECTOR(accels[i * NUMENTITIES + j], ax, ay, az);
+            }
+        }
+    }
 void compute(){
 	//make an acceleration matrix which is NUMENTITIES squared in size;
 	int i,j,k;
