@@ -8,38 +8,59 @@
 //Returns: None
 //Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
 // Function to calculate the pairwise acceleration matrix
-void constructAccelerationMatrix() {
-    // Allocate memory for the acceleration matrix
+void AccelerationMatrix() {
     vector3* accels = (vector3*)malloc(sizeof(vector3) * NUMENTITIES * NUMENTITIES);
 
-    // Iterate through each pair of objects to compute accelerations
     for (int i = 0; i < NUMENTITIES; ++i) {
         for (int j = 0; j < NUMENTITIES; ++j) {
             if (i == j) {
-                // Diagonal elements have zero acceleration (object doesn't accelerate itself)
+                // diagonal elements zero acceleration
                 FILL_VECTOR(accels[i * NUMENTITIES + j], 0, 0, 0);
             } else {
-                // Calculate distance between objects i and j
+                // distance between objects i and j
                 vector3 distance;
                 for (int k = 0; k < 3; ++k) {
                     distance[k] = hPos[i][k] - hPos[j][k];
                 }
-                double magnitude_sq = distance[0] * distance[0] + distance[1] * distance[1] + distance[2] * distance[2];
-                double magnitude = sqrt(magnitude_sq);
+                double sq = distance[0] * distance[0] + distance[1] * distance[1] + distance[2] * distance[2];
+				double acceler = -1 * GRAV_CONSTANT * mass[j] / sq;
+                double magnitudes = sqrt(sq);
 
-                // Calculate gravitational force
-                double accelmag = -1 * GRAV_CONSTANT * mass[j] / magnitude_sq;
+                //acceleration components
+                double ax = acceler * distance[0] / magnitudes;
+                double ay = acceler * distance[1] / magnitudes;
+                double az = acceler * distance[2] / magnitudes;
 
-                // Calculate acceleration components
-                double ax = accelmag * distance[0] / magnitude;
-                double ay = accelmag * distance[1] / magnitude;
-                double az = accelmag * distance[2] / magnitude;
-
-                // Store the acceleration in the matrix
                 FILL_VECTOR(accels[i * NUMENTITIES + j], ax, ay, az);
             }
         }
     }
+}
+
+void Acceleration(vector3* accels, vector3* hPos, vector3* hVel, double* mass) {
+    vector3 accel_sum[NUMENTITIES];
+    
+  
+    for (int i = 0; i < NUMENTITIES; ++i) {
+        for (int j = 0; j < NUMENTITIES; ++j) {
+            accel_sum[i][0] += accels[j * NUMENTITIES + i][0];
+            accel_sum[i][1] += accels[j * NUMENTITIES + i][1];
+            accel_sum[i][2] += accels[j * NUMENTITIES + i][2];
+        }
+    }
+
+    
+    for (int i = 0; i < NUMENTITIES; ++i) {
+        hPos[i][0] += hVel[i][0] * INTERVAL;
+        hPos[i][1] += hVel[i][1] * INTERVAL;
+        hPos[i][2] += hVel[i][2] * INTERVAL;
+
+		hVel[i][0] += accel_sum[i][0] * INTERVAL;
+        hVel[i][1] += accel_sum[i][1] * INTERVAL;
+        hVel[i][2] += accel_sum[i][2] * INTERVAL;
+    }
+}
+
 void compute(){
 	//make an acceleration matrix which is NUMENTITIES squared in size;
 	int i,j,k;
